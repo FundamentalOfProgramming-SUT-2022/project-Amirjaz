@@ -24,6 +24,7 @@ void removestr(char file[],int line, int pos,int length, char option);
 void copystr(char file[],int line, int pos,int length, char option);
 void cutstr(char file[],int line, int pos,int length, char option);
 void pastestr(char file[],int line, int pos);
+void tree(char *file, int curdepth, int depth);
 
 char clipboard[10000]={'\0'};
 
@@ -172,6 +173,24 @@ int main()
             int line, pos;
             scanf(" %d:%d", &line, &pos);
             pastestr(file, line, pos);
+        }
+        else if(!(strcmp(command, "tree")))
+        {
+            int depth = 0;
+            for(int i = 5; inp[i] != ' ' && inp[i] != '\0'; i++)
+            {
+                depth *= 10;
+                depth += (inp[i] - '0');
+            }
+            if(inp[5] == '-')
+            {
+                depth = 1000;
+            }
+            tree("./root",0, depth);
+        }
+        else
+        {
+            printf("Invalid Command!");
         }
 }
 
@@ -563,4 +582,31 @@ void pastestr(char file[],int line, int pos)
     insert(file,clipboard,line,pos);
 }
 
+void tree(char *file, int curdepth, int depth)
+{
+    if (depth == -1) {
+        tree(file, curdepth, 1000);
+        return;
+    }
+    if (curdepth> depth) return;
+    char inp[1000];
+    struct dirent *dp;
+    DIR *dir = opendir(file);
+    if (!dir) return;
+    while ((dp = readdir(dir)) != NULL) {
+        if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0) {
+            printf("|");
+            for (int i = 0; i < curdepth; i++) {
+                printf("--");
+            }
+            printf("%s\n", dp->d_name);
+            strcpy(inp, file);
+            strcat(inp, "/");
+            strcat(inp, dp->d_name);
+            tree(inp, curdepth + 1, depth);
+        }
+    }
+    closedir(dir);
+    return;
+}
 
