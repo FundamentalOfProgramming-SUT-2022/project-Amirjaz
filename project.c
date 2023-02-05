@@ -8,16 +8,24 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <stdbool.h>
+#include <dirent.h>
 
 //#define MAXL 10000;
 //#define MAXC 20;
 void errors(int n);
 void inpstr(char x, char str[]);
 void bugslash(char str[]);
+void simultecopy(char file[]);
 void createfile(char str[]);
 void cat(char inp[]);
 void insert(char file[],char str[], int line,int pos);
+void removestr(char file[],int line, int pos,int length, char option);
+void copystr(char file[],int line, int pos,int length, char option);
+void cutstr(char file[],int line, int pos,int length, char option);
+void pastestr(char file[],int line, int pos);
 
+char clipboard[10000]={'\0'};
 
 int main()
 {
@@ -69,7 +77,103 @@ int main()
         scanf(" %d:%d",&line ,&pos);
         insert(file,str,line,pos);
         }
+    else if(!(strcmp(command,"removestr")))
+    {
+        getchar();
+        scanf("%s",inp);
+        getchar();
+        char x = getchar();
+        char file[10000];
+        if(x == '"') {
+            getchar();
+            scanf("%[^\"]s",file);
+            getchar();
+        }
+        else if(x == '/') {scanf("%s",file);}
+        getchar();
+        scanf("%s",inp);
+        int line, pos;
+        scanf(" %d:%d ", &line, &pos);
+        scanf("%s",inp);
+        int length;
+        char option;
+        scanf(" %d -%c", &length, &option);
+        removestr(file, line, pos, length, option);
     }
+     else if (!(strcmp(command, "copystr")))
+        {
+            getchar();
+            scanf("%s", inp);
+            getchar();
+            char y = getchar();
+            char file[10000];
+            if (y == '"')
+            {
+                getchar();
+                scanf("%[^\"]s", file);
+                getchar();
+            }
+            else if (y== '/')
+                scanf("%s", file);
+            getchar();
+            scanf("%s", inp);
+            int line, pos;
+            scanf(" %d:%d ", &line, &pos);
+            scanf("%s", inp);
+            int length;
+            char option;
+            scanf(" %d -%c", &length, &option);
+            copystr(file, line, pos, length, option);
+        }
+
+        else if (!(strcmp(command, "cutstr")))
+        {
+            getchar();
+            scanf("%s", inp);
+            getchar();
+            char y = getchar();
+            char file[10000];
+            if (y == '"')
+            {
+                getchar();
+                scanf("%[^\"]s", file);
+                getchar();
+            }
+            else if (y== '/')
+                scanf("%s", file);
+            getchar();
+            scanf("%s", inp);
+            int line, pos;
+            scanf(" %d:%d ", &line, &pos);
+            scanf("%s", inp);
+            int length;
+            char option;
+            scanf(" %d -%c", &length, &option);
+            cutstr(file, line, pos, length, option);
+        }
+
+        else if (!(strcmp(command, "pastestr")))
+        {
+            getchar();
+            scanf("%s", inp);
+            getchar();
+            char y = getchar();
+            char file[10000];
+            if (y == '"')
+            {
+                getchar();
+                scanf("%[^\"]s", file);
+                getchar();
+            }
+            else if (y== '/')
+                scanf("%s", file);
+            getchar();
+            scanf("%s", inp);
+            int line, pos;
+            scanf(" %d:%d", &line, &pos);
+            pastestr(file, line, pos);
+        }
+}
 
 
 
@@ -80,19 +184,39 @@ void errors(int n)
         printf("This file does not exists");
         return;
     }
-    if(n==2)
+    else if(n==2)
     {
         printf("This file already exists");
         return;
     }
-    if(n==3)
+    else if(n==3)
     {
         printf("Invalid command");
         return;
     }
-    if(n==4)
+    else if(n==4)
     {
         printf("This position does not exists!");
+        return;
+    }
+    else if(n==5)
+    {
+        printf("There isn't enough characters to remove");
+        return;
+    }
+    else if(n==6)
+    {
+        printf("Invalid Option!");
+        return;
+    }
+    else if(n==7)
+    {
+        printf("There isn't enough characters to copy");
+        return;
+    }
+    else if(n==8)
+    {
+        printf("There isn't enough characters to cut");
         return;
     }
 }
@@ -152,6 +276,27 @@ void inpstr(char x, char str[])
         strcat(str, str2);
     }
     getchar();
+}
+void simultecopy(char file[])
+{
+    FILE *newfile;
+    FILE *cpy;
+    newfile = fopen(file,"r");
+    char y;int i=0;char tmp[10000],filecopy[10000]="Random Bullshit";
+    while(1)
+    {
+        y= fgetc(newfile);
+        if(y==EOF){break;}
+        tmp[i]=y;
+        i++;
+        tmp[i]='\0';
+    }
+    strcat(filecopy,file);
+    if(fopen(filecopy + 1,"r")==0){createfile(filecopy);}
+    cpy = fopen(filecopy + 1,"w");
+    fprintf(cpy,"%s",tmp);
+    fclose(cpy);
+    fclose(newfile);
 }
 
 void createfile(char str[])
@@ -251,3 +396,171 @@ void insert(char file[],char str[], int line,int pos)
     fprintf("%s %s %s",ghablstr,str,baadestr);
     fclose(newfile);
 }
+
+
+void removestr(char file[],int line, int pos,int length, char option)
+{
+    FILE *newfile;
+    if(fopen(file,"r")==0){errors(1);}
+    newfile= fopen(file,"r");
+    if(option=='f')
+    {
+        int i=1,j=0,z=0;char y;char tmp[10000];
+        while (i!= line || j!=pos)
+        {
+            y=fgetc(newfile);
+            if(y==EOF){errors(4);fclose(newfile);return;}
+            j++;
+            tmp[z]=y;tmp[z+1]='\0';
+            z++;
+            if(y=='\n')
+            {
+            i++;pos=0;
+            }
+        }
+        int cot=0;
+        while(cot<length)
+        {
+            y=fgetc(newfile);
+            if(y==EOF)
+            {
+               errors(5);
+               fclose(newfile);
+            }
+            cot++;
+        }
+        while(1)
+        {
+            y=fgetc(newfile);
+            if(y==EOF){break;}
+            tmp[z]=y;tmp[z+1]='\0';z++;
+        }
+        fclose(newfile);
+        newfile=fopen(file,"w");
+        fprintf(newfile,"%s",tmp);
+        fclose(newfile);
+    }
+    else if(option=='b')
+    {
+     int i=1,j=0,z=0;char y;char tmp[10000];
+        while (i!= line || j!=pos)
+        {
+            y=fgetc(newfile);
+            if(y==EOF){errors(4);fclose(newfile);return;}
+            j++;
+            tmp[z]=y;tmp[z+1]='\0';
+            z++;
+            if(y=='\n')
+            {
+            i++;pos=0;
+            }
+        }
+        tmp[strlen(tmp)-length]='\0';
+        z-=length;
+        while(1)
+        {
+            y=fgetc(newfile);
+            if(y==EOF){break;}
+            tmp[z]=y;tmp[z+1]='\0';z++;
+        }
+        fclose(newfile);
+        newfile=fopen(file,"w");
+        fprintf(newfile,"%s",tmp);
+        fclose(newfile);
+    }
+    else{
+        errors(6);
+        fclose(newfile);
+    }
+
+}
+
+
+
+void copystr(char file[],int line, int pos,int length, char option)
+{
+    FILE *newfile;
+    if(fopen(file,"r")==0)
+    {
+        errors(1);
+    }
+    newfile=fopen(file,"r");
+    if(option=='f')
+    {
+        int i=1,j=0,z=0;char y;char tmp[10000],copy[10000];
+        while (i!= line || j!=pos)
+        {
+            y=fgetc(newfile);
+            if(y==EOF){errors(4);fclose(newfile);return;}
+            j++;
+            tmp[z]=y;tmp[z+1]='\0';
+            z++;
+            if(y=='\n')
+            {
+            i++;pos=0;
+            }
+        }
+        int cot=0;
+        while(cot<length)
+        {
+           y= fgetc(newfile);
+           if(y==EOF)
+           {
+               if(false)
+               {
+                  printf("Cannot be coppied!");
+               }
+               else{
+                  printf("Cannot be cutted!");
+                               }
+               fclose(newfile);
+               return;
+           }
+           copy[cot]=y;
+           copy[cot+1]='\0';
+           cot++;
+        }
+        fclose(newfile);
+        clipboard[0]='\0';
+        strcpy(clipboard,copy);
+    }
+        else if(option=='b')
+        {
+            int i=1,j=0,z=0;char y;char tmp[10000],copy[10000];
+            while (i!= line || j!=pos)
+            {
+            y=fgetc(newfile);
+            if(y==EOF){errors(4);fclose(newfile);return;}
+            j++;
+            tmp[z]=y;tmp[z+1]='\0';
+            z++;
+            if(y=='\n')
+            {
+            i++;pos=0;
+            }
+            }
+        memmove(&copy[0],&copy[strlen(copy)-length],length);
+        clipboard[0]='\0';
+        fclose(newfile);
+        }
+    else{
+        printf("Option is incorrect!");
+        fclose(newfile);
+    }
+}
+
+void cutstr(char file[],int line, int pos,int length, char option)
+{
+    simultecopy(file);
+    copystr(file,line,pos,length,option);
+    removestr(file,line,pos,length,option);
+}
+
+
+void pastestr(char file[],int line, int pos)
+{
+    simultecopy(file);
+    insert(file,clipboard,line,pos);
+}
+
+
